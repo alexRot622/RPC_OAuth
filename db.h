@@ -1,8 +1,8 @@
-//
-// Created by alex on 11/9/22.
-//
+#ifndef OAUTH_DB_H
+#define OAUTH_DB_H
 
-#ifndef TEMA1_DB_H
-#define TEMA1_DB_H
+#define USER_ID_FILE "userIDs.db"
 
-#endif //TEMA1_DB_H
+int find_user(char *);
+
+#endif //OAUTH_DB_H
