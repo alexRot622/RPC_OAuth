@@ -12,7 +12,7 @@ SOURCES_SVC.c =
 SOURCES_SVC.h =
 SOURCES.x = auth.x
 
-TARGETS_SVC.c = auth_svc.c auth_server.c auth_xdr.c
+TARGETS_SVC.c = auth_svc.c auth_server.c auth_xdr.c db.c
 TARGETS_CLNT.c = auth_clnt.c auth_client.c auth_xdr.c
 TARGETS = auth.h auth_xdr.c auth_clnt.c auth_svc.c auth_client.c auth_server.c
 
