@@ -12,7 +12,7 @@ checkprog_1(char *host)
 {
 	CLIENT *clnt;
 	oauth_response  *result_1;
-	char * request_auth_1_arg;
+	char * request_auth_1_arg = "111111111111111";
 	oauth_response  *result_2;
 	s_req_token  request_token_1_arg;
 	oauth_response  *result_3;
@@ -32,7 +32,13 @@ checkprog_1(char *host)
 	if (result_1 == (oauth_response *) NULL) {
 		clnt_perror (clnt, "call failed");
 	}
-	result_2 = request_token_1(&request_token_1_arg, clnt);
+    if (!result_1->status) {
+        printf("GOT TOKEN: %s\n", result_1->token);
+    }
+    else {
+        printf("GOT STATUS: %d\n", result_1->status);
+    }
+	/*result_2 = request_token_1(&request_token_1_arg, clnt);
 	if (result_2 == (oauth_response *) NULL) {
 		clnt_perror (clnt, "call failed");
 	}
@@ -43,7 +49,7 @@ checkprog_1(char *host)
 	result_4 = approve_token_1(&approve_token_1_arg, clnt);
 	if (result_4 == (char **) NULL) {
 		clnt_perror (clnt, "call failed");
-	}
+	}*/
 #ifndef	DEBUG
 	clnt_destroy (clnt);
 #endif	 /* DEBUG */
