@@ -30,5 +30,5 @@ DENY (DELETE,Files,d8xf4fid6860N21,0)
 BEGIN f80N46i82fdx61d AUTHZ REFRESH
   AccessToken = d6x80i241f6Ndf8
   RefreshToken = 8f6i61dN804fd2x
-PERMIT (EXECUTE,Applications,d6x80i241f6Ndf8,1)
+DENY (EXECUTE,Applications,d6x80i241f6Ndf8,1)
 PERMIT (DELETE,Applications,d6x80i241f6Ndf8,0)

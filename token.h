@@ -12,7 +12,7 @@
  * OUTPUT: rotated string
  * */
 char* generate_access_token(char* clientIdToken) {
-    char *token = malloc(TOKEN_LEN * sizeof(char*));
+    char *token = (char *) malloc(TOKEN_LEN * sizeof(char*));
     int i, key, used[TOKEN_LEN];
     int rotationIndex = TOKEN_LEN;
 
@@ -23,6 +23,33 @@ char* generate_access_token(char* clientIdToken) {
         } while (used[key] == 1);
         token[i] = clientIdToken[key];
         used[key] = 1;
+    }
+    token[TOKEN_LEN] = '\0';
+    return token;
+}
+
+
+/**
+ * generate string by shifting the input to the right once (Caesar cipher)
+ *
+ * INPUT: fixed length of 16
+ * OUTPUT: rotated string
+ * */
+char* generate_request_token(char* clientIdToken) {
+    char *token = (char *) malloc(TOKEN_LEN * sizeof(char*));
+    int i, key;
+
+    for (i = 0; i < TOKEN_LEN; i++) {
+        if (clientIdToken[i] <= '9') {
+            token[i] = '0' + (clientIdToken[i] - '0' + 1) % 10;
+        } else if (clientIdToken[i] <= 'Z') {
+            token[i] = 'A' + (clientIdToken[i] - 'A' + 1) % 26;
+        } else if (clientIdToken[i] <= 'z') {
+            token[i] = 'a' + (clientIdToken[i] - 'a' + 1) % 26;
+        }
+        else {
+            return NULL;
+        }
     }
     token[TOKEN_LEN] = '\0';
     return token;

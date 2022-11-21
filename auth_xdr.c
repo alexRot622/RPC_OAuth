@@ -30,7 +30,9 @@ xdr_oauth_response (XDR *xdrs, oauth_response *objp)
 {
 	register int32_t *buf;
 
-	 if (!xdr_string (xdrs, &objp->token, ~0))
+	 if (!xdr_string (xdrs, &objp->requestToken, ~0))
+		 return FALSE;
+	 if (!xdr_string (xdrs, &objp->accessToken, ~0))
 		 return FALSE;
 	 if (!xdr_oauth_status (xdrs, &objp->status))
 		 return FALSE;

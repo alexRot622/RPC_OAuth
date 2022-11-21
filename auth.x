@@ -17,13 +17,15 @@ enum action {
 };
 
 struct oauth_response {
-    string token<>;
+    string requestToken<>;
+    string accessToken<>;
     oauth_status status;
 };
 
 struct s_req_token {
     string id<>;
     string token<>;
+    bool renew;
 };
 
 struct s_val_act {

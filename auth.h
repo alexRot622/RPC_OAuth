@@ -35,7 +35,8 @@ enum action {
 typedef enum action action;
 
 struct oauth_response {
-	char *token;
+	char *requestToken;
+	char *accessToken;
 	oauth_status status;
 };
 typedef struct oauth_response oauth_response;

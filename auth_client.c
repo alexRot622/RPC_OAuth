@@ -12,7 +12,7 @@ checkprog_1(char *host)
 {
 	CLIENT *clnt;
 	oauth_response  *result_1;
-	char * request_auth_1_arg = "111111111111111";
+	char * request_auth_1_arg = "74xaLqdTDdHZ9ey";
 	oauth_response  *result_2;
 	s_req_token  request_token_1_arg;
 	oauth_response  *result_3;
@@ -33,7 +33,8 @@ checkprog_1(char *host)
 		clnt_perror (clnt, "call failed");
 	}
     if (!result_1->status) {
-        printf("GOT TOKEN: %s\n", result_1->token);
+        printf("GOT REQUEST TOKEN: %s\n", result_1->requestToken);
+        printf("GOT ACCESS TOKEN: %s\n", result_1->accessToken);
     }
     else {
         printf("GOT STATUS: %d\n", result_1->status);
