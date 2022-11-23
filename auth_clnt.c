@@ -40,13 +40,13 @@ request_token_1(s_req_token *argp, CLIENT *clnt)
 }
 
 oauth_response *
-validate_action_1(s_val_act *argp, CLIENT *clnt)
+validate_action_1(s_req_token *argp, CLIENT *clnt)
 {
 	static oauth_response clnt_res;
 
 	memset((char *)&clnt_res, 0, sizeof(clnt_res));
 	if (clnt_call (clnt, VALIDATE_ACTION,
-		(xdrproc_t) xdr_s_val_act, (caddr_t) argp,
+		(xdrproc_t) xdr_s_req_token, (caddr_t) argp,
 		(xdrproc_t) xdr_oauth_response, (caddr_t) &clnt_res,
 		TIMEOUT) != RPC_SUCCESS) {
 		return (NULL);

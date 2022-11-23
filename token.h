@@ -35,17 +35,17 @@ char* generate_access_token(char* clientIdToken) {
  * INPUT: fixed length of 16
  * OUTPUT: rotated string
  * */
-char* generate_request_token(char* clientIdToken) {
+char* generate_shift_token(char* clientIdToken, int shift) {
     char *token = (char *) malloc(TOKEN_LEN * sizeof(char*));
     int i, key;
 
     for (i = 0; i < TOKEN_LEN; i++) {
         if (clientIdToken[i] <= '9') {
-            token[i] = '0' + (clientIdToken[i] - '0' + 1) % 10;
+            token[i] = '0' + (clientIdToken[i] - '0' + shift) % 10;
         } else if (clientIdToken[i] <= 'Z') {
-            token[i] = 'A' + (clientIdToken[i] - 'A' + 1) % 26;
+            token[i] = 'A' + (clientIdToken[i] - 'A' + shift) % 26;
         } else if (clientIdToken[i] <= 'z') {
-            token[i] = 'a' + (clientIdToken[i] - 'a' + 1) % 26;
+            token[i] = 'a' + (clientIdToken[i] - 'a' + shift) % 26;
         }
         else {
             return NULL;

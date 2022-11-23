@@ -21,6 +21,7 @@ OBJECTS_SVC = $(SOURCES_SVC.c:%.c=%.o) $(TARGETS_SVC.c:%.c=%.o)
 # Compiler flags
 
 CFLAGS += -g -I /usr/include/tirpc
+CPPFLAGS += -g -I /usr/include/tirpc
 LDLIBS += -lnsl -ltirpc
 RPCGENFLAGS =
 
@@ -39,7 +40,7 @@ $(CLIENT) : $(OBJECTS_CLNT)
 	$(LINK.c) -o $(CLIENT) $(OBJECTS_CLNT) $(LDLIBS)
 
 $(SERVER) : $(OBJECTS_SVC)
-	$(LINK.c) -o $(SERVER) $(OBJECTS_SVC) $(LDLIBS)
+	$(LINK.cpp) -o $(SERVER) $(OBJECTS_SVC) $(LDLIBS)
 
  clean:
 	 $(RM) core Makefile.auth $(OBJECTS_CLNT) $(OBJECTS_SVC) $(CLIENT) $(SERVER)

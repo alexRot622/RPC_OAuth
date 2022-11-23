@@ -22,7 +22,7 @@ checkprog_1(struct svc_req *rqstp, register SVCXPRT *transp)
 	union {
 		char *request_auth_1_arg;
 		s_req_token request_token_1_arg;
-		s_val_act validate_action_1_arg;
+		s_req_token validate_action_1_arg;
 		char *approve_token_1_arg;
 	} argument;
 	char *result;
@@ -47,7 +47,7 @@ checkprog_1(struct svc_req *rqstp, register SVCXPRT *transp)
 		break;
 
 	case VALIDATE_ACTION:
-		_xdr_argument = (xdrproc_t) xdr_s_val_act;
+		_xdr_argument = (xdrproc_t) xdr_s_req_token;
 		_xdr_result = (xdrproc_t) xdr_oauth_response;
 		local = (char *(*)(char *, struct svc_req *)) validate_action_1_svc;
 		break;

@@ -19,13 +19,8 @@ enum action {
 struct oauth_response {
     string requestToken<>;
     string accessToken<>;
+    string refreshToken<>;
     oauth_status status;
-};
-
-struct s_req_token {
-    string id<>;
-    string token<>;
-    bool renew;
 };
 
 struct s_val_act {
@@ -34,11 +29,19 @@ struct s_val_act {
     string token<>;
 };
 
+struct s_req_token {
+    string id<>;
+    string token<>;
+    s_val_act act;
+    bool refresh;
+
+};
+
 program CHECKPROG {
     version CHECKVERS {
         oauth_response REQUEST_AUTH(string) = 1;
         oauth_response REQUEST_TOKEN(s_req_token) = 2;
-        oauth_response VALIDATE_ACTION(s_val_act) = 3;
+        oauth_response VALIDATE_ACTION(s_req_token) = 3;
         string APPROVE_TOKEN(string) = 4;
     } = 1;
 } = 0x220811;

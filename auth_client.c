@@ -5,20 +5,21 @@
  */
 
 #include "auth.h"
+#include <string.h>
+#include <stdio.h>
+#include <stdlib.h>
 
+#define CLIENT_FILE "client.in"
+
+char *status_string(oauth_status status);
 
 void
 checkprog_1(char *host)
 {
 	CLIENT *clnt;
-	oauth_response  *result_1;
-	char * request_auth_1_arg = "74xaLqdTDdHZ9ey";
-	oauth_response  *result_2;
-	s_req_token  request_token_1_arg;
-	oauth_response  *result_3;
-	s_val_act  validate_action_1_arg;
-	char * *result_4;
-	char * approve_token_1_arg;
+	void *result;
+	char *request_auth;
+	s_req_token request_token;
 
 #ifndef	DEBUG
 	clnt = clnt_create (host, CHECKPROG, CHECKVERS, "udp");
@@ -28,34 +29,199 @@ checkprog_1(char *host)
 	}
 #endif	/* DEBUG */
 
-	result_1 = request_auth_1(&request_auth_1_arg, clnt);
-	if (result_1 == (oauth_response *) NULL) {
-		clnt_perror (clnt, "call failed");
-	}
-    if (!result_1->status) {
-        printf("GOT REQUEST TOKEN: %s\n", result_1->requestToken);
-        printf("GOT ACCESS TOKEN: %s\n", result_1->accessToken);
+    FILE *file = fopen(CLIENT_FILE, "r");
+    if (!file) {
+        fprintf(stderr, "%s not found\n", CLIENT_FILE);
+        return;
     }
-    else {
-        printf("GOT STATUS: %d\n", result_1->status);
+
+    char line[256];
+    char *token;
+
+    char **users = calloc(256, sizeof(char *));
+    char **accessTokens = calloc(256, sizeof(char *));
+    char **refreshTokens = calloc(256, sizeof(char *));
+    int nUsers = 0;
+
+    fgets(line, 256, file);
+    while (!*line) {
+        token = strtok(line, ",");
+        char *user_id = calloc(strlen(token) + 1, 1);
+        strncpy(user_id, token, strlen(token));
+
+        token = strtok(line, ",");
+        char *command = calloc(strlen(token) + 1, 1);
+        strncpy(command, token, strlen(token));
+
+        token = strtok(line, ",");
+        char *arg = calloc(strlen(token) + 1, 1);
+        strncpy(arg, token, strlen(token));
+
+        if (strcmp(command, "REQUEST") == 0) {
+            if (strcmp(arg, "0") == 0) {
+                request_token.refresh = 0;
+            }
+            else if (strcmp(arg, "1") == 0) {
+                request_token.refresh = 1;
+            }
+            else {
+                // TODO: PRINT ERROR
+            }
+
+            request_auth = user_id;
+            result = request_auth_1(&request_auth, clnt);
+            if (result == (oauth_response *) NULL) {
+                clnt_perror(clnt, "call failed");
+            }
+
+            oauth_response *response = (oauth_response *) (result);
+            if (response->status) {
+                printf("%s\n", status_string(response->status));
+                continue;
+            }
+
+            char **signed_token = approve_token_1(&response->requestToken, clnt);
+            if (strcmp(response->requestToken, *signed_token) == 0) {
+                // TODO: print not signed or smth
+                continue;
+            }
+
+            request_token.token = *signed_token;
+            request_token.id = user_id;
+
+            response = request_token_1(&request_token, clnt);
+            if (response == NULL) {
+                clnt_perror(clnt, "call failed");
+            }
+
+            if (response->status) {
+                printf("%s\n", status_string(response->status));
+                continue;
+            }
+
+            int pos = -1;
+            for (int i = 0; i < nUsers && pos < 0; i++) {
+                if (strcmp(users[i], user_id) == 0) {
+                    pos = i;
+                }
+            }
+
+            if (pos < 0) {
+                pos = nUsers;
+                nUsers++;
+            }
+            if (!users[pos])
+                users[pos] = calloc(32, 1);
+            strcpy(users[pos], user_id);
+
+            if (!accessTokens[pos])
+                accessTokens[pos] = calloc(32, 1);
+            strcpy(accessTokens[pos], response->accessToken);
+
+            if (request_token.refresh) {
+                if (!refreshTokens[pos])
+                    refreshTokens[pos] = calloc(32, 1);
+                strcpy(refreshTokens[pos], response->refreshToken);
+            }
+
+            printf("%s -> %s", user_id, response->accessToken);
+            if (request_token.refresh) {
+                printf(",%s", response->refreshToken);
+            }
+            printf("\n");
+        }
+        else {
+            // Operation
+            action act;
+            if (strcmp(command, "READ") == 0) {
+                act = READ;
+            }
+            else if (strcmp(command, "INSERT") == 0) {
+                act = INSERT;
+            }
+            else if (strcmp(command, "MODIFY") == 0) {
+                act = MODIFY;
+            }
+            else if (strcmp(command, "DELETE") == 0) {
+                act = DELETE;
+            }
+            else if (strcmp(command, "EXECUTE") == 0) {
+                act = EXECUTE;
+            }
+            else {
+                // TODO: PRINT ERROR
+                break;
+            }
+
+            request_token.act.act = act;
+            request_token.act.token = NULL;
+            request_token.act.resource = arg;
+            for (int i = 0; i < nUsers && !request_token.act.token; i++) {
+                if (strcmp(users[i], user_id) == 0)
+                    request_token.act.token = accessTokens[i];
+            }
+
+            if (!request_token.act.token) {
+                // TODO: print error
+                continue;
+            }
+
+            result = validate_action_1(&request_token, clnt);
+            if (result == (oauth_response *) NULL) {
+                clnt_perror(clnt, "call failed");
+            }
+
+            oauth_response *response = (oauth_response *) (result);
+            printf("%s\n", status_string(response->status));
+        }
+
+        fgets(line, 256, file);
     }
-	/*result_2 = request_token_1(&request_token_1_arg, clnt);
-	if (result_2 == (oauth_response *) NULL) {
-		clnt_perror (clnt, "call failed");
-	}
-	result_3 = validate_action_1(&validate_action_1_arg, clnt);
-	if (result_3 == (oauth_response *) NULL) {
-		clnt_perror (clnt, "call failed");
-	}
-	result_4 = approve_token_1(&approve_token_1_arg, clnt);
-	if (result_4 == (char **) NULL) {
-		clnt_perror (clnt, "call failed");
-	}*/
+
+    for (int i = 0; i < nUsers; i++) {
+        if (users[i])
+            free(users[i]);
+        if (accessTokens[i])
+            free(accessTokens[i]);
+        if (refreshTokens[i])
+            free(refreshTokens[i]);
+    }
+    free(users);
+    free(accessTokens);
+    free(refreshTokens);
+
 #ifndef	DEBUG
 	clnt_destroy (clnt);
 #endif	 /* DEBUG */
 }
 
+char *status_string(oauth_status status) {
+    switch (status) {
+        case PERMISSION_GRANTED: {
+            return "PERMISSION_GRANTED";
+        }
+        case USER_NOT_FOUND: {
+            return "USER_NOT_FOUND";
+        }
+        case REQUEST_DENIED: {
+            return "REQUEST_DENIED";
+        }
+        case PERMISSION_DENIED: {
+            return "PERMISSION_DENIED";
+        }
+        case TOKEN_EXPIRED: {
+            return "TOKEN_EXPIRED";
+        }
+        case RESOURCE_NOT_FOUND: {
+            return "RESOURCE_NOT_FOUND";
+        }
+        case OPERATION_NOT_PERMITTED: {
+            return "OPERATION_NOT_PERMITTED";
+        }
+        default:
+            return NULL;
+    }
+}
 
 int
 main (int argc, char *argv[])
