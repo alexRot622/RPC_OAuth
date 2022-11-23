@@ -9,12 +9,10 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-#define CLIENT_FILE "client.in"
-
 char *status_string(oauth_status status);
 
 void
-checkprog_1(char *host)
+checkprog_1(char *host, char *filename)
 {
 	CLIENT *clnt;
 	void *result;
@@ -29,9 +27,9 @@ checkprog_1(char *host)
 	}
 #endif	/* DEBUG */
 
-    FILE *file = fopen(CLIENT_FILE, "r");
+    FILE *file = fopen(filename, "r");
     if (!file) {
-        fprintf(stderr, "%s not found\n", CLIENT_FILE);
+        fprintf(stderr, "%s not found\n", filename);
         return;
     }
 
@@ -43,17 +41,16 @@ checkprog_1(char *host)
     char **refreshTokens = calloc(256, sizeof(char *));
     int nUsers = 0;
 
-    fgets(line, 256, file);
-    while (!*line) {
-        token = strtok(line, ",");
+    while (fgets(line, 256, file)) {
+        token = strtok(line, ",\n");
         char *user_id = calloc(strlen(token) + 1, 1);
         strncpy(user_id, token, strlen(token));
 
-        token = strtok(line, ",");
+        token = strtok(NULL, ",\n");
         char *command = calloc(strlen(token) + 1, 1);
         strncpy(command, token, strlen(token));
 
-        token = strtok(line, ",");
+        token = strtok(NULL, ",\n");
         char *arg = calloc(strlen(token) + 1, 1);
         strncpy(arg, token, strlen(token));
 
@@ -71,7 +68,9 @@ checkprog_1(char *host)
             request_auth = user_id;
             result = request_auth_1(&request_auth, clnt);
             if (result == (oauth_response *) NULL) {
+                fprintf(stderr, "RESULT NULL\n");
                 clnt_perror(clnt, "call failed");
+                continue;
             }
 
             oauth_response *response = (oauth_response *) (result);
@@ -174,8 +173,6 @@ checkprog_1(char *host)
             oauth_response *response = (oauth_response *) (result);
             printf("%s\n", status_string(response->status));
         }
-
-        fgets(line, 256, file);
     }
 
     for (int i = 0; i < nUsers; i++) {
@@ -228,11 +225,11 @@ main (int argc, char *argv[])
 {
 	char *host;
 
-	if (argc < 2) {
-		printf ("usage: %s server_host\n", argv[0]);
+	if (argc < 3) {
+		printf ("usage: %s server_host client_input\n", argv[0]);
 		exit (1);
 	}
 	host = argv[1];
-	checkprog_1 (host);
+	checkprog_1(host, argv[2]);
 exit (0);
 }

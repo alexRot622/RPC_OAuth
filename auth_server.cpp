@@ -204,15 +204,22 @@ validate_action_1_svc(s_req_token *argp, struct svc_req *rqstp)
 }
 
 char **
-approve_token_1_svc(char *token, struct svc_req *rqstp)
+approve_token_1_svc(char **token, struct svc_req *rqstp)
 {
-    static char * result;
+    static char *result = NULL;
 
-    result = token;
+    if (token == NULL) {
+        return &result;
+    }
+    if (*token == NULL) {
+        return &result;
+    }
+
+    result = *token;
 
     bool found = false;
     for (auto &it : requestTokens) {
-        if (it.second.first == token) {
+        if (it.second.first == *token) {
             //TODO: validity?
             found = true;
             break;
@@ -227,8 +234,8 @@ approve_token_1_svc(char *token, struct svc_req *rqstp)
     if (permissions == NULL) {
         return &result;
     }
-    result = (char *) calloc(strlen(token) + strlen(permissions) + 2, 1);
-    sprintf(result, "%s&%s", permissions, token);
+    result = (char *) calloc(strlen(*token) + strlen(permissions) + 2, 1);
+    sprintf(result, "%s&%s", permissions, *token);
 
     return &result;
 }
