@@ -66,31 +66,43 @@ checkprog_1(char *host, char *filename)
             }
 
             request_auth = user_id;
-            result = request_auth_1(&request_auth, clnt);
-            if (result == (oauth_response *) NULL) {
-                fprintf(stderr, "RESULT NULL\n");
+            oauth_response *response = request_auth_1(&request_auth, clnt);
+            if (response == NULL) {
+                fprintf(stderr, "RESULT NULL1\n");
                 clnt_perror(clnt, "call failed");
                 continue;
             }
 
-            oauth_response *response = (oauth_response *) (result);
             if (response->status) {
                 printf("%s\n", status_string(response->status));
                 continue;
             }
 
-            char **signed_token = approve_token_1(&response->requestToken, clnt);
-            if (strcmp(response->requestToken, *signed_token) == 0) {
+            char *requestToken = calloc(strlen(response->requestToken), 1);
+            strcpy(requestToken, response->requestToken);
+            char **signed_token = approve_token_1(&requestToken, clnt);
+            if (strcmp(requestToken, *signed_token) == 0) {
                 // TODO: print not signed or smth
+                // TODO: free memory
+                printf("REQUEST_DENIED\n");
                 continue;
             }
 
             request_token.token = *signed_token;
             request_token.id = user_id;
 
+            // TODO: RPC is weird
+            request_token.act.token = calloc(1, 1);
+            request_token.act.act = 1;
+            request_token.act.resource = calloc(1, 1);
+
             response = request_token_1(&request_token, clnt);
+            free(request_token.act.token);
+            free(request_token.act.resource);
             if (response == NULL) {
+                fprintf(stderr, "RESULT NULL2\n");
                 clnt_perror(clnt, "call failed");
+                continue;
             }
 
             if (response->status) {
@@ -123,11 +135,13 @@ checkprog_1(char *host, char *filename)
                 strcpy(refreshTokens[pos], response->refreshToken);
             }
 
-            printf("%s -> %s", user_id, response->accessToken);
+            printf("%s -> %s", requestToken, response->accessToken);
             if (request_token.refresh) {
                 printf(",%s", response->refreshToken);
             }
             printf("\n");
+
+            free(requestToken);
         }
         else {
             // Operation
@@ -155,17 +169,27 @@ checkprog_1(char *host, char *filename)
             request_token.act.act = act;
             request_token.act.token = NULL;
             request_token.act.resource = arg;
-            for (int i = 0; i < nUsers && !request_token.act.token; i++) {
-                if (strcmp(users[i], user_id) == 0)
+
+            int found = 0;
+            for (int i = 0; i < nUsers && !found; i++) {
+                if (strcmp(users[i], user_id) == 0) {
                     request_token.act.token = accessTokens[i];
+                    found = 1;
+                }
             }
 
-            if (!request_token.act.token) {
-                // TODO: print error
-                continue;
-            }
+
+            // TODO: RPC is weird
+            request_token.id = calloc(1, 1);
+            request_token.token = calloc(1, 1);
+            if (!found)
+                request_token.act.token = calloc(1, 1);
 
             result = validate_action_1(&request_token, clnt);
+            free(request_token.id);
+            free(request_token.token);
+            if (!found)
+                free(request_token.act.token);
             if (result == (oauth_response *) NULL) {
                 clnt_perror(clnt, "call failed");
             }

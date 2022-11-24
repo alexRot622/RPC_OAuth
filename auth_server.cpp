@@ -15,13 +15,13 @@ bool valid_signed_token(const std::string& requestToken);
 bool valid_token(const std::string& token);
 std::unordered_map<std::string, std::string> create_permission_map(std::string permStr);
 
+std::string action_string(action act);
+
 oauth_response *
 request_auth_1_svc(char **argp, struct svc_req *rqstp)
 {
     static oauth_response result;
 
-    result.requestToken = NULL;
-    result.accessToken = NULL;
     if (!argp) {
         result.status = USER_NOT_FOUND;
         return &result;
@@ -31,18 +31,22 @@ request_auth_1_svc(char **argp, struct svc_req *rqstp)
         return &result;
     }
 
+    // Make all address non-null so that RPC properly works
+    result.accessToken = result.refreshToken = *argp;
+
     char *user_id = *argp;
     printf("BEGIN %s AUTHZ\n", user_id);
 
     int user_idx = find_user(user_id);
     if (user_idx < 0) {
-        fprintf( stderr, "find_user(%s) returned %d.\n", user_id, user_idx);
+        fprintf(stderr, "find_user(%s) returned %d.\n", user_id, user_idx);
         return &result;
     } else if (user_idx > 0) {
         result.status = PERMISSION_GRANTED;
         result.requestToken = generate_access_token(user_id);
         printf("  RequestToken = %s\n", result.requestToken);
-        requestTokens.emplace(user_id, std::make_pair(result.requestToken, validity));
+        requestTokens[user_id] = std::make_pair(result.requestToken, validity);
+        result.accessToken = result.refreshToken = result.requestToken;
     } else {
         result.status = USER_NOT_FOUND;
     }
@@ -74,6 +78,7 @@ request_token_1_svc(s_req_token *argp, struct svc_req *rqstp)
         return &result;
     }
 
+
     char *token = strtok(argp->token, "&");
     std::string permissionString = std::string(token);
     token = strtok(NULL, "&");
@@ -86,25 +91,37 @@ request_token_1_svc(s_req_token *argp, struct svc_req *rqstp)
 
     std::unordered_map<std::string, std::string> permissions = create_permission_map(permissionString);
 
-    result.accessToken = generate_access_token(argp->token);
+    result.accessToken = generate_access_token(requestToken.data());
     printf("  AccessToken = %s\n", result.accessToken);
-    result.refreshToken = generate_access_token(result.accessToken);
+    User* user;
+    if (argp->refresh) {
+        result.refreshToken = generate_access_token(result.accessToken);
+        printf("  RefreshToken = %s\n", result.refreshToken);
+        user = new User(result.accessToken, result.refreshToken, validity, permissions);
+    }
+    else {
+        // TODO: RPC is weird
+        result.refreshToken = requestToken.data();
+        user = new User(result.accessToken, validity, permissions);
+    }
 
-    User* user = new User(result.accessToken, result.refreshToken, validity, permissions);
-    users.emplace(std::string(user_id), user);
-    printf("  RefreshToken = %s\n", result.accessToken);
+    users[std::string(user_id)] = user;
 
+    result.status = PERMISSION_GRANTED;
+
+    // TODO: RPC is weird
+    result.requestToken = requestToken.data();
     return &result;
 }
 
 std::unordered_map<std::string, std::string> create_permission_map(std::string permStr) {
-    char *token = strtok(permStr.data(), "/");
+    char *token = strtok(permStr.data(), ",");
     std::unordered_map<std::string, std::string> permissions = {};
     while (token) {
-        std::string perms = std::string(token);
-        token = strtok(NULL, "/");
         std::string filename = std::string(token);
-        token = strtok(NULL, "/");
+        token = strtok(NULL, ",");
+        std::string perms = std::string(token);
+        token = strtok(NULL, ",");
 
         permissions.emplace(filename, perms);
     }
@@ -112,11 +129,11 @@ std::unordered_map<std::string, std::string> create_permission_map(std::string p
 }
 
 bool valid_signed_token(const std::string& requestToken) {
-    static std::string token_regex = "(R?I?M?D?X?/[a-zA-Z0-9]+/)*&"
+    static std::string token_regex = "([a-zA-Z0-9]+,R?I?M?D?X?,)*&"
                                      "[a-zA-Z0-9][a-zA-Z0-9][a-zA-Z0-9][a-zA-Z0-9]"
                                      "[a-zA-Z0-9][a-zA-Z0-9][a-zA-Z0-9][a-zA-Z0-9]"
                                      "[a-zA-Z0-9][a-zA-Z0-9][a-zA-Z0-9][a-zA-Z0-9]"
-                                     "[a-zA-Z0-9][a-zA-Z0-9][a-zA-Z0-9][a-zA-Z0-9]";
+                                     "[a-zA-Z0-9][a-zA-Z0-9][a-zA-Z0-9]";
 
     return std::regex_match(requestToken, std::regex(token_regex));
 }
@@ -125,7 +142,7 @@ bool valid_token(const std::string& token) {
     static std::string token_regex = "[a-zA-Z0-9][a-zA-Z0-9][a-zA-Z0-9][a-zA-Z0-9]"
                                      "[a-zA-Z0-9][a-zA-Z0-9][a-zA-Z0-9][a-zA-Z0-9]"
                                      "[a-zA-Z0-9][a-zA-Z0-9][a-zA-Z0-9][a-zA-Z0-9]"
-                                     "[a-zA-Z0-9][a-zA-Z0-9][a-zA-Z0-9][a-zA-Z0-9]";
+                                     "[a-zA-Z0-9][a-zA-Z0-9][a-zA-Z0-9]";
 
     return std::regex_match(token, std::regex(token_regex));
 }
@@ -135,15 +152,23 @@ validate_action_1_svc(s_req_token *argp, struct svc_req *rqstp)
 {
     static oauth_response result;
 
-    result.requestToken = NULL;
-    result.accessToken = NULL;
     if (!argp) {
         result.status = USER_NOT_FOUND;
         return &result;
     }
 
+    result.requestToken = argp->act.token;
+    result.accessToken = argp->act.token;
+    result.refreshToken = argp->act.token;
+
     if (!valid_token(argp->act.token)) {
         result.status = PERMISSION_DENIED;
+        if (argp->act.resource == NULL)
+            argp->act.resource = "";
+        if (argp->act.token == NULL)
+            argp->act.token = "";
+        printf("DENY (%s,%s,%s,%d)\n", action_string(argp->act.act).data(),
+               argp->act.resource, argp->act.token, 0);
         return &result;
     }
 
@@ -162,22 +187,59 @@ validate_action_1_svc(s_req_token *argp, struct svc_req *rqstp)
 
     if (!found) {
         result.status = PERMISSION_DENIED;
+        if (argp->act.resource == NULL)
+            argp->act.resource = "";
+        if (argp->act.token == NULL)
+            argp->act.token = "";
+        printf("DENY (%s,%s,%s,%d)\n", action_string(argp->act.act).data(),
+               argp->act.resource, argp->act.token, 0);
         return &result;
     }
 
+    if (user->validity <= 0) {
+        if (user->refresh) {
+            result.accessToken = generate_access_token(user->refreshToken.data());
+            result.refreshToken = generate_access_token(result.accessToken);
 
-    if (user->validity < 0) {
-        result.status = TOKEN_EXPIRED;
-        return &result;
+            user->accessToken = result.accessToken;
+            user->refreshToken = result.refreshToken;
+            user->validity = validity;
+        }
+        else {
+            result.status = TOKEN_EXPIRED;
+            if (argp->act.resource == NULL)
+                argp->act.resource = "";
+            if (argp->act.token == NULL)
+                argp->act.token = "";
+            printf("DENY (%s,%s,,%d)\n", action_string(argp->act.act).data(),
+                   argp->act.resource, 0);
+            return &result;
+        }
     }
+    else {
+        user->validity -= 1;
+    }
+
 
     if (find_resource(argp->act.resource) <= 0) {
         result.status = RESOURCE_NOT_FOUND;
+        if (argp->act.resource == NULL)
+            argp->act.resource = "";
+        if (argp->act.token == NULL)
+            argp->act.token = "";
+        printf("DENY (%s,%s,%s,%d)\n", action_string(argp->act.act).data(),
+               argp->act.resource, argp->act.token, user->validity);
         return &result;
     }
 
     if (user->permissions.find(argp->act.resource) == user->permissions.end()) {
         result.status = OPERATION_NOT_PERMITTED;
+        if (argp->act.resource == NULL)
+            argp->act.resource = "";
+        if (argp->act.token == NULL)
+            argp->act.token = "";
+        printf("DENY (%s,%s,%s,%d)\n", action_string(argp->act.act).data(),
+               argp->act.resource, argp->act.token, user->validity);
         return &result;
     }
 
@@ -195,12 +257,47 @@ validate_action_1_svc(s_req_token *argp, struct svc_req *rqstp)
     for (char &c : permString) {
         if (c == lookup) {
             result.status = PERMISSION_GRANTED;
+            if (argp->act.resource == NULL)
+                argp->act.resource = "";
+            if (argp->act.token == NULL)
+                argp->act.token = "";
+            printf("PERMIT (%s,%s,%s,%d)\n", action_string(argp->act.act).data(),
+                   argp->act.resource, argp->act.token, user->validity);
             return &result;
         }
     }
 
     result.status = OPERATION_NOT_PERMITTED;
+    if (argp->act.resource == NULL)
+        argp->act.resource = "";
+    if (argp->act.token == NULL)
+        argp->act.token = "";
+    printf("DENY (%s,%s,%s,%d)\n", action_string(argp->act.act).data(),
+           argp->act.resource, argp->act.token, user->validity);
     return &result;
+}
+
+std::string action_string(action act) {
+    switch (act) {
+        case READ: {
+            return "READ";
+        }
+        case INSERT: {
+            return "INSERT";
+        }
+        case MODIFY: {
+            return "MODIFY";
+        }
+        case DELETE: {
+            return "DELETE";
+        }
+        case EXECUTE: {
+            return "EXECUTE";
+        }
+        default: {
+            return "";
+        }
+    }
 }
 
 char **
@@ -234,8 +331,14 @@ approve_token_1_svc(char **token, struct svc_req *rqstp)
     if (permissions == NULL) {
         return &result;
     }
-    result = (char *) calloc(strlen(*token) + strlen(permissions) + 2, 1);
-    sprintf(result, "%s&%s", permissions, *token);
+    if (strlen(permissions) == 0) {
+        result = (char *) calloc(strlen(*token) + 1, 1);
+        strcpy(result, *token);
+    }
+    else {
+        result = (char *) calloc(strlen(*token) + strlen(permissions) + 2, 1);
+        sprintf(result, "%s&%s", permissions, *token);
+    }
 
     return &result;
 }

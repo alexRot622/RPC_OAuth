@@ -57,6 +57,9 @@ int find_resource(char *resource) {
     char db_resource[64];
     for (int i = 0; i < db_num; i++) {
         fgets(db_resource, 64, db);
+        int len = strlen(db_resource);
+        if (db_resource[len - 1] == '\n')
+            db_resource[len - 1] = '\0';
         if (strcmp(db_resource, resource) == 0) {
             fclose(db);
             return i + 1;
@@ -75,18 +78,22 @@ int load_resource_permissions() {
         db = fopen(USER_APPROVE_FILE, "r");
     }
 
-    fgets(line, 256, db);
-    if (!*line) {
+    if (!fgets(line, 256, db)) {
         return -1;
     }
 
     char *token = strtok(line, ",");
 
     permissions = {};
-    while (!token) {
+    while (token) {
         std::string filename(token);
         token = strtok(NULL, ",");
+
+        int len = strlen(token);
+        if (token[len - 1] == '\n')
+            token[len - 1] = '\0';
         std::string perms(token);
+
         token = strtok(NULL, ",");
 
         if (filename == "*") {
@@ -100,14 +107,32 @@ int load_resource_permissions() {
 }
 
 char *find_resource_permissions() {
-    if (!load_resource_permissions())
+    if (load_resource_permissions())
         return NULL;
 
     std::string perms;
     for (auto &it : permissions) {
-        perms += it.first + "-" + it.second + "/";
+        perms += it.first + "," + it.second + ",";
     }
 
     return strdup(perms.data());
 }
+
+//int read_validity() {
+//    FILE *db = fopen(VALIDITY_FILE, "r");
+//    static char line[256];
+//
+//    if (!db)
+//        return -1;
+//
+//    if (!fgets(line, 256, db)) {
+//        fclose(db);
+//        return -1;
+//    }
+//
+//
+//
+//    fclose(db);
+//    return validity;
+//}
 
