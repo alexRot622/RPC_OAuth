@@ -2,6 +2,7 @@
 #include "token.h"
 #include "db.h"
 #include "User.h"
+#include "srv_params.h"
 
 #include <unordered_map>
 #include <string>
@@ -9,7 +10,6 @@
 
 std::unordered_map<std::string, std::pair<std::string, int>> requestTokens = {};
 std::unordered_map<std::string, User *> users = {};
-int validity = 2;
 
 bool valid_signed_token(const std::string& requestToken);
 bool valid_token(const std::string& token);

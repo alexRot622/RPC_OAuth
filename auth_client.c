@@ -63,6 +63,8 @@ checkprog_1(char *host, char *filename)
             }
             else {
                 // TODO: PRINT ERROR
+                printf("OPERATION_NOT_PERMITTED\n");
+                continue;
             }
 
             request_auth = user_id;
@@ -82,7 +84,6 @@ checkprog_1(char *host, char *filename)
             strcpy(requestToken, response->requestToken);
             char **signed_token = approve_token_1(&requestToken, clnt);
             if (strcmp(requestToken, *signed_token) == 0) {
-                // TODO: print not signed or smth
                 // TODO: free memory
                 printf("REQUEST_DENIED\n");
                 continue;
@@ -162,7 +163,7 @@ checkprog_1(char *host, char *filename)
                 act = EXECUTE;
             }
             else {
-                // TODO: PRINT ERROR
+                printf("OPERATION_NOT_PERMITTED\n");
                 break;
             }
 

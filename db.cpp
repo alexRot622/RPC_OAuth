@@ -2,6 +2,8 @@
 #include <stdlib.h>
 #include <string.h>
 #include "db.h"
+#include "stdio.h"
+#include "srv_params.h"
 
 #include <unordered_map>
 #include <string>
@@ -9,7 +11,7 @@
 std::unordered_map<std::string, std::string> permissions = {};
 
 int find_user(char *user_id) {
-    FILE *db = fopen(USER_ID_FILE, "r");
+    FILE *db = fopen(user_id_file, "r");
     if (!db)
         return -1;
     char s_num[16];
@@ -39,7 +41,7 @@ int find_user(char *user_id) {
 }
 
 int find_resource(char *resource) {
-    FILE *db = fopen(USER_RESOURCE_FILE, "r");
+    FILE *db = fopen(resource_file, "r");
     if (!db)
         return -1;
     char r_num[16];
@@ -75,7 +77,7 @@ int load_resource_permissions() {
     static char line[256];
 
     if (db == NULL) {
-        db = fopen(USER_APPROVE_FILE, "r");
+        db = fopen(approve_file, "r");
     }
 
     if (!fgets(line, 256, db)) {
@@ -117,22 +119,4 @@ char *find_resource_permissions() {
 
     return strdup(perms.data());
 }
-
-//int read_validity() {
-//    FILE *db = fopen(VALIDITY_FILE, "r");
-//    static char line[256];
-//
-//    if (!db)
-//        return -1;
-//
-//    if (!fgets(line, 256, db)) {
-//        fclose(db);
-//        return -1;
-//    }
-//
-//
-//
-//    fclose(db);
-//    return validity;
-//}
 

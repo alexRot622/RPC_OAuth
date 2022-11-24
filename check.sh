@@ -7,7 +7,8 @@
 #
 # Completati/schimbati urmatoarele valori inainte de utilizare:
 SERVER_NAME="auth_server"
-SERVER_PARAMS="tests/test$1/userIDs.db tests/test$1/resources.db tests/test$1/approvals.db"
+VALIDITIES=("2" "2" "2" "3" "4" "5" "3")
+SERVER_PARAMS="tests/test$1/userIDs.db tests/test$1/resources.db tests/test$1/approvals.db ${VALIDITIES[$1]}"
 CLIENT_NAME="auth_client"
 CLIENT_PARAMS="tests/test$1/client.in"
 SERVER_ADDR="localhost"
