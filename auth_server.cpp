@@ -179,6 +179,8 @@ validate_action_1_svc(s_req_token *argp, struct svc_req *rqstp)
     for (auto &it : users) {
         if (it.second->accessToken == argp->act.token) {
             user_id = it.first;
+            result.accessToken = it.second->accessToken.data();
+            result.refreshToken = it.second->refreshToken.data();
             user = it.second;
             found = true;
             break;
@@ -203,7 +205,11 @@ validate_action_1_svc(s_req_token *argp, struct svc_req *rqstp)
 
             user->accessToken = result.accessToken;
             user->refreshToken = result.refreshToken;
-            user->validity = validity;
+            printf("BEGIN %s AUTHZ REFRESH\n", user_id.data());
+            printf("  AccessToken = %s\n", result.accessToken);
+            printf("  RefreshToken = %s\n", result.refreshToken);
+
+            user->validity = validity - 1;
         }
         else {
             result.status = TOKEN_EXPIRED;

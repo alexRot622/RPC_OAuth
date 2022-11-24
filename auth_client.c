@@ -171,9 +171,11 @@ checkprog_1(char *host, char *filename)
             request_token.act.resource = arg;
 
             int found = 0;
+            int id = 0;
             for (int i = 0; i < nUsers && !found; i++) {
                 if (strcmp(users[i], user_id) == 0) {
                     request_token.act.token = accessTokens[i];
+                    id = i;
                     found = 1;
                 }
             }
@@ -196,6 +198,10 @@ checkprog_1(char *host, char *filename)
 
             oauth_response *response = (oauth_response *) (result);
             printf("%s\n", status_string(response->status));
+            if (strcmp(accessTokens[id], response->accessToken) != 0) {
+                strcpy(accessTokens[id], response->accessToken);
+                strcpy(refreshTokens[id], response->refreshToken);
+            }
         }
     }
 
