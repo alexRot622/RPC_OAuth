@@ -63,7 +63,7 @@ checkprog_1(char *host, char *filename)
             }
             else {
                 printf("OPERATION_NOT_PERMITTED\n");
-                continue;
+                goto free_mem;
             }
 
             request_auth = user_id;
@@ -71,27 +71,27 @@ checkprog_1(char *host, char *filename)
             if (response == NULL) {
                 fprintf(stderr, "RESULT NULL1\n");
                 clnt_perror(clnt, "call failed");
-                continue;
+                goto free_mem;
             }
 
             if (response->status) {
                 printf("%s\n", status_string(response->status));
-                continue;
+                goto free_mem;
             }
 
             char *requestToken = calloc(strlen(response->requestToken), 1);
             strcpy(requestToken, response->requestToken);
             char **signed_token = approve_token_1(&requestToken, clnt);
             if (strcmp(requestToken, *signed_token) == 0) {
-                // TODO: free memory
                 printf("REQUEST_DENIED\n");
-                continue;
+                free(requestToken);
+                goto free_mem;
             }
 
             request_token.token = *signed_token;
             request_token.id = user_id;
 
-            // TODO: RPC is weird
+            // Set fields for RPC
             request_token.act.token = calloc(1, 1);
             request_token.act.act = 1;
             request_token.act.resource = calloc(1, 1);
@@ -102,12 +102,12 @@ checkprog_1(char *host, char *filename)
             if (response == NULL) {
                 fprintf(stderr, "RESULT NULL2\n");
                 clnt_perror(clnt, "call failed");
-                continue;
+                goto free_mem;
             }
 
             if (response->status) {
                 printf("%s\n", status_string(response->status));
-                continue;
+                goto free_mem;
             }
 
             int pos = -1;
@@ -140,7 +140,6 @@ checkprog_1(char *host, char *filename)
                 printf(",%s", response->refreshToken);
             }
             printf("\n");
-
             free(requestToken);
         }
         else {
@@ -181,7 +180,7 @@ checkprog_1(char *host, char *filename)
             }
 
 
-            // TODO: RPC is weird
+            // Set fields for RPC
             request_token.id = calloc(1, 1);
             request_token.token = calloc(1, 1);
             if (!found)
@@ -194,6 +193,7 @@ checkprog_1(char *host, char *filename)
                 free(request_token.act.token);
             if (result == (oauth_response *) NULL) {
                 clnt_perror(clnt, "call failed");
+                goto free_mem;
             }
 
             oauth_response *response = (oauth_response *) (result);
@@ -204,6 +204,10 @@ checkprog_1(char *host, char *filename)
                 strcpy(refreshTokens[id], response->refreshToken);
             }
         }
+        free_mem:
+        free(user_id);
+        free(command);
+        free(arg);
     }
 
     for (int i = 0; i < nUsers; i++) {

@@ -72,7 +72,6 @@ request_token_1_svc(s_req_token *argp, struct svc_req *rqstp)
         return &result;
     }
 
-    // TODO: is it ok to compare C++ string with C char*?
     if (!valid_signed_token(argp->token)) {
         result.status = REQUEST_DENIED;
         return &result;
@@ -100,7 +99,7 @@ request_token_1_svc(s_req_token *argp, struct svc_req *rqstp)
         user = new User(result.accessToken, result.refreshToken, validity, permissions);
     }
     else {
-        // TODO: RPC is weird
+        // Set fields for RPC
         result.refreshToken = requestToken.data();
         user = new User(result.accessToken, validity, permissions);
     }
@@ -109,7 +108,7 @@ request_token_1_svc(s_req_token *argp, struct svc_req *rqstp)
 
     result.status = PERMISSION_GRANTED;
 
-    // TODO: RPC is weird
+    // Set fields for RPC
     result.requestToken = requestToken.data();
     return &result;
 }
@@ -174,7 +173,6 @@ validate_action_1_svc(s_req_token *argp, struct svc_req *rqstp)
         return &result;
     }
 
-    // TODO: is it ok to compare C++ string with C char*?
     std::string user_id;
     User *user;
     bool found = false;
@@ -329,7 +327,6 @@ approve_token_1_svc(char **token, struct svc_req *rqstp)
     bool found = false;
     for (auto &it : requestTokens) {
         if (it.second.first == *token) {
-            //TODO: validity?
             found = true;
             break;
         }

@@ -21,6 +21,11 @@ Approve Request Token (client catre user), Request Access Token (client catre se
 Aceasta procedura va intoarce de asemenea noul set de tokeni in cazul in care apelandul a cerut innoirea tokenilor in timpul Request Access Token
 si tokenul curent a expirat.
 
+Pentru a transmite date prin RPC, folosesc s_req_token pentru transmiterea client la server si oauth_response pentru server la client.
+Toate campurile trebuie sa fie setate pentru ca apelul RPC sa se efectueze, asa ca cererile de la client si raspunsurile de la server
+vor contine mai multe informatii decat sunt necesare. Nu folosesc aceste campuri pentru a transmite informatii in plus,
+am limitat informatiile utile din campuri la cele descrise in enunt.
+
 Testing:
 - Checkerul folosit este bazat pe cel dat in schelet. Se poate apela folosind "./check.sh all"
 - Am modificat lista de parametri care sunt dati serverului, adaugand durata validitatii tokenurilor ca ultimul parametru

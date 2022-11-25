@@ -6,10 +6,6 @@
 CLIENT = auth_client
 SERVER = auth_server
 
-SOURCES_CLNT.c =
-SOURCES_CLNT.h =
-SOURCES_SVC.c =
-SOURCES_SVC.h =
 SOURCES.x = auth.x
 
 TARGETS_SVC.c = auth_svc.c auth_server.cpp auth_xdr.c db.cpp
@@ -43,4 +39,4 @@ $(SERVER) : $(OBJECTS_SVC)
 	$(LINK.cpp) -o $(SERVER) $(OBJECTS_SVC) $(LDLIBS)
 
  clean:
-	 $(RM) core Makefile.auth $(OBJECTS_CLNT) $(OBJECTS_SVC) $(CLIENT) $(SERVER)
+	 $(RM) core Makefile.auth $(OBJECTS_CLNT) $(OBJECTS_SVC) $(CLIENT) $(SERVER) auth_server.o
