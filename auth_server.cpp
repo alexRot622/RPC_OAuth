@@ -37,7 +37,7 @@ request_auth_1_svc(char **argp, struct svc_req *rqstp)
     char *user_id = *argp;
     printf("BEGIN %s AUTHZ\n", user_id);
 
-    int user_idx = find_user(user_id);
+    int user_idx = find_user(user_id, user_id_file);
     if (user_idx < 0) {
         fprintf(stderr, "find_user(%s) returned %d.\n", user_id, user_idx);
         return &result;
@@ -161,12 +161,14 @@ validate_action_1_svc(s_req_token *argp, struct svc_req *rqstp)
     result.accessToken = argp->act.token;
     result.refreshToken = argp->act.token;
 
+    char emptyString[1];
+    emptyString[0] = '\0';
     if (!valid_token(argp->act.token)) {
         result.status = PERMISSION_DENIED;
         if (argp->act.resource == NULL)
-            argp->act.resource = "";
+            argp->act.resource = emptyString;
         if (argp->act.token == NULL)
-            argp->act.token = "";
+            argp->act.token = emptyString;
         printf("DENY (%s,%s,%s,%d)\n", action_string(argp->act.act).data(),
                argp->act.resource, argp->act.token, 0);
         return &result;
@@ -190,9 +192,9 @@ validate_action_1_svc(s_req_token *argp, struct svc_req *rqstp)
     if (!found) {
         result.status = PERMISSION_DENIED;
         if (argp->act.resource == NULL)
-            argp->act.resource = "";
+            argp->act.resource = emptyString;
         if (argp->act.token == NULL)
-            argp->act.token = "";
+            argp->act.token = emptyString;
         printf("DENY (%s,%s,%s,%d)\n", action_string(argp->act.act).data(),
                argp->act.resource, argp->act.token, 0);
         return &result;
@@ -204,6 +206,7 @@ validate_action_1_svc(s_req_token *argp, struct svc_req *rqstp)
             result.refreshToken = generate_access_token(result.accessToken);
 
             user->accessToken = result.accessToken;
+            argp->act.token = result.accessToken;
             user->refreshToken = result.refreshToken;
             printf("BEGIN %s AUTHZ REFRESH\n", user_id.data());
             printf("  AccessToken = %s\n", result.accessToken);
@@ -214,9 +217,9 @@ validate_action_1_svc(s_req_token *argp, struct svc_req *rqstp)
         else {
             result.status = TOKEN_EXPIRED;
             if (argp->act.resource == NULL)
-                argp->act.resource = "";
+                argp->act.resource = emptyString;
             if (argp->act.token == NULL)
-                argp->act.token = "";
+                argp->act.token = emptyString;
             printf("DENY (%s,%s,,%d)\n", action_string(argp->act.act).data(),
                    argp->act.resource, 0);
             return &result;
@@ -227,12 +230,12 @@ validate_action_1_svc(s_req_token *argp, struct svc_req *rqstp)
     }
 
 
-    if (find_resource(argp->act.resource) <= 0) {
+    if (find_resource(argp->act.resource, resource_file) <= 0) {
         result.status = RESOURCE_NOT_FOUND;
         if (argp->act.resource == NULL)
-            argp->act.resource = "";
+            argp->act.resource = emptyString;
         if (argp->act.token == NULL)
-            argp->act.token = "";
+            argp->act.token = emptyString;
         printf("DENY (%s,%s,%s,%d)\n", action_string(argp->act.act).data(),
                argp->act.resource, argp->act.token, user->validity);
         return &result;
@@ -241,9 +244,9 @@ validate_action_1_svc(s_req_token *argp, struct svc_req *rqstp)
     if (user->permissions.find(argp->act.resource) == user->permissions.end()) {
         result.status = OPERATION_NOT_PERMITTED;
         if (argp->act.resource == NULL)
-            argp->act.resource = "";
+            argp->act.resource = emptyString;
         if (argp->act.token == NULL)
-            argp->act.token = "";
+            argp->act.token = emptyString;
         printf("DENY (%s,%s,%s,%d)\n", action_string(argp->act.act).data(),
                argp->act.resource, argp->act.token, user->validity);
         return &result;
@@ -257,16 +260,19 @@ validate_action_1_svc(s_req_token *argp, struct svc_req *rqstp)
         case MODIFY: lookup = 'M'; break;
         case DELETE: lookup = 'D'; break;
         case EXECUTE: lookup = 'X'; break;
-        default: break;//TODO PRINT ERROR
+        default: {
+            result.status = OPERATION_NOT_PERMITTED;
+            return &result;
+        }
     }
 
     for (char &c : permString) {
         if (c == lookup) {
             result.status = PERMISSION_GRANTED;
             if (argp->act.resource == NULL)
-                argp->act.resource = "";
+                argp->act.resource = emptyString;
             if (argp->act.token == NULL)
-                argp->act.token = "";
+                argp->act.token = emptyString;
             printf("PERMIT (%s,%s,%s,%d)\n", action_string(argp->act.act).data(),
                    argp->act.resource, argp->act.token, user->validity);
             return &result;
@@ -275,9 +281,9 @@ validate_action_1_svc(s_req_token *argp, struct svc_req *rqstp)
 
     result.status = OPERATION_NOT_PERMITTED;
     if (argp->act.resource == NULL)
-        argp->act.resource = "";
+        argp->act.resource = emptyString;
     if (argp->act.token == NULL)
-        argp->act.token = "";
+        argp->act.token = emptyString;
     printf("DENY (%s,%s,%s,%d)\n", action_string(argp->act.act).data(),
            argp->act.resource, argp->act.token, user->validity);
     return &result;
@@ -333,7 +339,7 @@ approve_token_1_svc(char **token, struct svc_req *rqstp)
         return &result;
     }
 
-    char *permissions = find_resource_permissions();
+    char *permissions = find_resource_permissions(approve_file);
     if (permissions == NULL) {
         return &result;
     }

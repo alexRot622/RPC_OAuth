@@ -1,3 +1,30 @@
-1. request authorization
-2. approve request token
-3. request access token
+Rotaru Petru-Alexandru, 341C3
+
+Structura proiect:
+- auth.x -> folosit pentru generarea RPC stubs si a template-urilor pentru auth_client.c, auth_server.cpp
+- auth_clnt.c, auth_svc.c, auth_xdr.c -> stubs, generate de RPC. Am modificat auth_svc pentru a pastra argumentele primite
+pentru a putea fi folosite in procedurile RPC
+- auth_client.c -> implementarea citirii input de catre client si apelarea RPC
+- auth_server.cpp -> implementarea proceduri RPC
+- srv_params.h -> definire parametri externi, atribuiti in auth_svc.c si folositi in auth_server.cpp, db.cpp
+- db.h, db.cpp -> proceduri pentru interfatarea cu fisierele de utilizatori, resurse, aprobari
+- token.h -> procedura pentru generarea de tokeni
+- User.h -> definirea clasei de utilizatori folosita in auth_server.cpp, care va contine pentru un utilizator
+tokeni de access, refresh, daca utilizatorul a optat pentru reinnoire, si permisiunile utilizatorului.
+- Makefile -> Makefile pentru compilare proiect.
+regula all contine si apelul de rpcgen, dar este comentat pentru a nu suprascrie modificarile din auth_svc.c
+
+Pentru client, exista 2 tipuri de comenzi:
+- Request, care realizeaza prin RPC, in aceasta ordine: Request Authorization (client catre server),
+Approve Request Token (client catre user), Request Access Token (client catre server)
+- Operatii (Read, Insert, Modify, Delete, Execute) care apeleaza prin RPC procedura Validate Delegated Action (client catre server).
+Aceasta procedura va intoarce de asemenea noul set de tokeni in cazul in care apelandul a cerut innoirea tokenilor in timpul Request Access Token
+si tokenul curent a expirat.
+
+Testing:
+- Checkerul folosit este bazat pe cel dat in schelet. Se poate apela folosind "./check.sh all"
+- Am modificat lista de parametri care sunt dati serverului, adaugand durata validitatii tokenurilor ca ultimul parametru
+- Am adaugat newline la finalul tuturor fisierelor expected_output
+- Outputul serverului difera in ultimul dest, deoarece clientul trimite "11111" ca operatia ceruta sa se efecuteze.
+Deoarece nu era mentionat in enunt, am ales sa reprezint operatia folosind un enum, deci nu pot trimite acest string catre server.
+In schimb, cazurile in care input-ul clientului nu este valid sunt gestionate direct in client.

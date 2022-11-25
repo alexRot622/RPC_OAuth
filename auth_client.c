@@ -62,7 +62,6 @@ checkprog_1(char *host, char *filename)
                 request_token.refresh = 1;
             }
             else {
-                // TODO: PRINT ERROR
                 printf("OPERATION_NOT_PERMITTED\n");
                 continue;
             }
@@ -199,7 +198,8 @@ checkprog_1(char *host, char *filename)
 
             oauth_response *response = (oauth_response *) (result);
             printf("%s\n", status_string(response->status));
-            if (strcmp(accessTokens[id], response->accessToken) != 0) {
+            if (response->status != PERMISSION_DENIED &&
+                strcmp(accessTokens[id], response->accessToken) != 0) {
                 strcpy(accessTokens[id], response->accessToken);
                 strcpy(refreshTokens[id], response->refreshToken);
             }

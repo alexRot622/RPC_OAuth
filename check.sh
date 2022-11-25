@@ -7,8 +7,8 @@
 #
 # Completati/schimbati urmatoarele valori inainte de utilizare:
 SERVER_NAME="auth_server"
-VALIDITIES=("2" "2" "2" "3" "4" "5" "3")
-SERVER_PARAMS="tests/test$1/userIDs.db tests/test$1/resources.db tests/test$1/approvals.db ${VALIDITIES[$1]}"
+VALIDITIES=("x" "2" "2" "2" "3" "4" "5" "3")
+SERVER_PARAMS="tests/test$1/userIDs.db tests/test$1/resources.db tests/test$1/approvals.db"
 CLIENT_NAME="auth_client"
 CLIENT_PARAMS="tests/test$1/client.in"
 SERVER_ADDR="localhost"
@@ -25,10 +25,11 @@ fi
 
 numberPattern='^[0-9]+$'
 if [[ $1 =~ $numberPattern ]]; then
-    ./$SERVER_NAME $SERVER_PARAMS > server.out &
+    ./$SERVER_NAME $SERVER_PARAMS ${VALIDITIES[$1]} > server.out &
     SERVER_PID=$!
     sleep 1
     ./$CLIENT_NAME $SERVER_ADDR $CLIENT_PARAMS > client.out
+    echo $SERVER_ADDR $CLIENT_PARAMS
     kill $SERVER_PID
 
     if [ $# -gt 1 ] && [ $2 -eq 1 ]; then
@@ -64,7 +65,7 @@ if [[ $1 =~ $numberPattern ]]; then
 else
     for i in {1..7}
     do
-        SERVER_PARAMS_ALL=${SERVER_PARAMS//testall/test$i}
+        SERVER_PARAMS_ALL="${SERVER_PARAMS//testall/test$i} ${VALIDITIES[$i]}"
         CLIENT_PARAMS_ALL=${CLIENT_PARAMS//testall/test$i}
         ./$SERVER_NAME $SERVER_PARAMS_ALL > server.out &
         SERVER_PID=$!

@@ -3,14 +3,13 @@
 #include <string.h>
 #include "db.h"
 #include "stdio.h"
-#include "srv_params.h"
 
 #include <unordered_map>
 #include <string>
 
 std::unordered_map<std::string, std::string> permissions = {};
 
-int find_user(char *user_id) {
+int find_user(char *user_id, char *user_id_file) {
     FILE *db = fopen(user_id_file, "r");
     if (!db)
         return -1;
@@ -40,7 +39,7 @@ int find_user(char *user_id) {
     return 0;
 }
 
-int find_resource(char *resource) {
+int find_resource(char *resource, char *resource_file) {
     FILE *db = fopen(resource_file, "r");
     if (!db)
         return -1;
@@ -72,7 +71,7 @@ int find_resource(char *resource) {
     return 0;
 }
 
-int load_resource_permissions() {
+int load_resource_permissions(char *approve_file) {
     static FILE *db = NULL;
     static char line[256];
 
@@ -108,8 +107,8 @@ int load_resource_permissions() {
     return 0;
 }
 
-char *find_resource_permissions() {
-    if (load_resource_permissions())
+char *find_resource_permissions(char *approve_file) {
+    if (load_resource_permissions(approve_file))
         return NULL;
 
     std::string perms;

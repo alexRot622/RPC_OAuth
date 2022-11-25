@@ -4,6 +4,7 @@
  */
 
 #include "auth.h"
+#include "srv_params.h"
 #include <stdio.h>
 #include <stdlib.h>
 #include <rpc/pmap_clnt.h>
@@ -11,8 +12,6 @@
 #include <memory.h>
 #include <sys/socket.h>
 #include <netinet/in.h>
-
-#include "srv_params.h"
 
 #ifndef SIG_PF
 #define SIG_PF void(*)(int)
@@ -80,6 +79,10 @@ checkprog_1(struct svc_req *rqstp, register SVCXPRT *transp)
 	return;
 }
 
+char *user_id_file;
+char *resource_file;
+char *approve_file;
+int validity;
 int
 main (int argc, char **argv)
 {
@@ -94,6 +97,8 @@ main (int argc, char **argv)
     resource_file = argv[2];
     approve_file = argv[3];
     validity = strtol(argv[4], NULL, 0);
+
+    setbuf(stdout, NULL);
 
 	pmap_unset (CHECKPROG, CHECKVERS);
 

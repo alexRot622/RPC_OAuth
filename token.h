@@ -1,3 +1,6 @@
+#ifndef TEMA1_TOKEN_H
+#define TEMA1_TOKEN_H
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <time.h>
@@ -28,29 +31,4 @@ char* generate_access_token(char* clientIdToken) {
     return token;
 }
 
-
-/**
- * generate string by shifting the input to the right once (Caesar cipher)
- *
- * INPUT: fixed length of 16
- * OUTPUT: rotated string
- * */
-char* generate_shift_token(char* clientIdToken, int shift) {
-    char *token = (char *) malloc(TOKEN_LEN * sizeof(char*));
-    int i, key;
-
-    for (i = 0; i < TOKEN_LEN; i++) {
-        if (clientIdToken[i] <= '9') {
-            token[i] = '0' + (clientIdToken[i] - '0' + shift) % 10;
-        } else if (clientIdToken[i] <= 'Z') {
-            token[i] = 'A' + (clientIdToken[i] - 'A' + shift) % 26;
-        } else if (clientIdToken[i] <= 'z') {
-            token[i] = 'a' + (clientIdToken[i] - 'a' + shift) % 26;
-        }
-        else {
-            return NULL;
-        }
-    }
-    token[TOKEN_LEN] = '\0';
-    return token;
-}
+#endif
